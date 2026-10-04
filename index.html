@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>RAKE · paper desk</title>
+<style>
+  :root {
+    --bg: #10110e;
+    --panel: #171910;
+    --line: #2a2e22;
+    --ink: #e7eadc;
+    --dim: #8d937c;
+    --amber: #e2f08a;
+    --mint: #9be7b5;
+    --red: #ff6d6d;
+    --blue: #8eb6ff;
+    --warn: #f0c56e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  button, a { font: inherit; color: inherit; }
+  button { background: none; border: 1px solid var(--line); color: var(--ink); border-radius: 4px; padding: 6px 8px; }
+  button.on { border-color: var(--amber); color: var(--amber); }
+  a { color: var(--amber); text-decoration: none; }
+  header {
+    position: sticky; top: 0; z-index: 3;
+    background: rgba(16,17,14,.94); border-bottom: 1px solid var(--line);
+    padding: 10px 12px 8px;
+  }
+  .brand { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  h1 { font-size: 15px; margin: 0; letter-spacing: .14em; }
+  h1 span { color: var(--amber); }
+  .sub { color: var(--dim); font-size: 11px; }
+  .paper {
+    margin-top: 8px; border: 1px solid #3d4228; color: var(--amber);
+    padding: 6px 8px; font-size: 11px;
+  }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); padding: 6px; }
+  .stat b { display: block; color: var(--dim); font-weight: 500; font-size: 10px; letter-spacing: .08em; }
+  .stat em { font-style: normal; color: var(--amber); }
+  .row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .row button { flex: 1; min-width: 90px; }
+  .kill.on { border-color: var(--red); color: var(--red); }
+  main { display: grid; gap: 10px; padding: 10px 12px 28px; }
+  @media (min-width: 900px) {
+    main { grid-template-columns: 1.5fr .9fr; align-items: start; }
+  }
+  section { border: 1px solid var(--line); background: #13150f; }
+  .hd { display: flex; justify-content: space-between; gap: 8px; padding: 8px; border-bottom: 1px solid var(--line); color: var(--dim); font-size: 11px; letter-spacing: .08em; }
+  .tape { max-height: 62vh; overflow: auto; }
+  .ev {
+    display: grid; grid-template-columns: 62px 1fr; gap: 6px;
+    padding: 7px 8px; border-bottom: 1px solid #22251b; text-decoration: none; color: inherit;
+  }
+  .ev.arrived { box-shadow: inset 3px 0 0 var(--amber); }
+  .t { color: var(--dim); }
+  .who { color: var(--blue); }
+  .buy { color: var(--mint); }
+  .sell { color: var(--warn); }
+  .skip { color: var(--dim); }
+  .rej { color: var(--red); }
+  .rev { color: var(--warn); }
+  .ops { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
+  .op { text-align: left; padding: 8px; background: #10130c; }
+  .op small { display: block; color: var(--dim); }
+  .dot { width: 8px; height: 8px; border-radius: 99px; display: inline-block; margin-right: 4px; }
+  .rules { color: var(--dim); padding: 8px; font-size: 11px; }
+  .pos { padding: 8px; border-top: 1px solid var(--line); }
+  .pos div { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; }
+  .up { color: var(--mint); }
+  .down { color: var(--red); }
+  .analysis { padding: 8px; }
+  .an-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .verdict { font-size: 13px; letter-spacing: .08em; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .cell { border: 1px solid var(--line); padding: 6px; background: #10130c; }
+  .cell b { display: block; color: var(--dim); font-weight: 500; font-size: 10px; letter-spacing: .06em; }
+  .risks { margin: 8px 0 0; padding-left: 16px; color: var(--warn); }
+  .mint { color: var(--dim); font-size: 10px; word-break: break-all; }
+  footer { color: var(--dim); font-size: 11px; padding: 0 12px 20px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1><span>RAKE</span> PAPER DESK</h1>
+    <div class="sub" id="clock">booting</div>
+  </div>
+  <div class="sub">eight scouts · solana memes · dexscreener · your keys stay yours</div>
+  <div class="paper">PAPER ONLY. Fills are a log, not Jupiter swaps. Not a fund. Not financial advice. Coins go to zero.</div>
+  <div class="stats">
+    <div class="stat"><b>BANK</b><em id="bank">$10,000</em></div>
+    <div class="stat"><b>OPEN</b><em id="open">0</em></div>
+    <div class="stat"><b>DECISIONS</b><em id="decisions">0</em></div>
+    <div class="stat"><b>P&L</b><em id="pnl">$0</em></div>
+  </div>
+  <svg id="pnlChart" viewBox="0 0 320 64" style="width:100%;height:64px;margin-top:8px;background:#171910;border:1px solid #2a2e22"></svg>
+  <div class="row">
+    <button id="kill" class="kill">KILL SWITCH OFF</button>
+    <button id="wallet">CONNECT WALLET</button>
+    <button id="flat">FLATTEN PAPER</button>
+    <button id="all" class="on">ALL SCOUTS</button>
+  </div>
+</header>
+<main>
+  <section>
+    <div class="hd"><span>TOKEN ANALYSIS</span><span id="anmeta">live · dexscreener + rugcheck</span></div>
+    <div class="analysis" id="analysis">waiting for the first tick</div>
+  </section>
+  <section>
+    <div class="hd"><span>NEW COIN SCANNER</span><span id="scanmeta">ranking fresh solana pairs</span></div>
+    <div class="row" style="padding:8px">
+      <button id="snew" class="on">NEWEST</button>
+      <button id="srun">RUNNERS</button>
+      <button id="sdanger">DANGER</button>
+    </div>
+    <div style="padding:0 8px 8px"><input id="q" placeholder="filter symbol or mint" style="width:100%;background:#10130c;color:inherit;border:1px solid var(--line);padding:6px"></div>
+    <div class="tape" id="scanner">scanning</div>
+  </section>
+  <section>
+    <div class="hd"><span>KOL WALLETS</span><span id="kolmeta">public labels · not confirmed ids</span></div>
+    <div class="tape" id="kols">waiting for wallet checks</div>
+  </section>
+  <section>
+    <div class="hd"><span>SNIPER</span><span id="snipeState">SAFE · PAPER</span></div>
+    <div class="row" style="padding:8px">
+      <button id="arm" class="kill">ARM SNIPER</button>
+      <button id="flatSnipes">FLATTEN SNIPES</button>
+    </div>
+    <div class="grid" style="padding:0 8px 8px">
+      <div class="cell"><b>PAPER SIZE</b><input id="paperSize" value="150" style="width:70px;background:#10130c;color:inherit;border:1px solid var(--line);padding:4px"></div>
+      <div class="cell"><b>LIVE SOL</b><input id="liveSize" value="0.05" style="width:70px;background:#10130c;color:inherit;border:1px solid var(--line);padding:4px"></div>
+      <div class="cell"><b>MAX OPEN</b>4</div>
+      <div class="cell"><b>AGE</b>2–25m</div>
+      <div class="cell"><b>LIQUIDITY</b>≥ $12K</div>
+      <div class="cell"><b>5M</b>+4% to +80%</div>
+      <div class="cell"><b>BUYS</b>≥ 55%</div>
+      <div class="cell"><b>HEAT</b>≥ 62</div>
+      <div class="cell"><b>RUG</b>≤ .45</div>
+      <div class="cell"><b>TAKE</b>+40%</div>
+      <div class="cell"><b>STOP</b>−18% or 5m < −12%</div>
+    </div>
+    <div class="hd"><span>OPEN SHOTS</span><span id="snipeCount">0</span></div>
+    <div class="pos" id="snipeBook">no armed paper shots</div>
+    <div class="hd"><span>SNIPE LOG</span><span>paper only</span></div>
+    <div class="tape" id="snipeLog" style="max-height:28vh">waiting for a 2–25m runner</div>
+  </section>
+  <section>
+    <div class="hd"><span id="feedlabel">LIVE TAPE</span><span id="feedmeta">waiting on dexscreener</span></div>
+    <div class="tape" id="tape"></div>
+  </section>
+  <section>
+    <div class="hd"><span>SCOUTS</span><span>tap to filter</span></div>
+    <div class="ops" id="ops"></div>
+    <div class="rules" id="rules">MAX 5% / $500 PER PAPER TRADE · LIQ ≥ $15K · AGE ≥ 30M · RUG ≤ .55 · DAILY STOP −10%</div>
+    <div class="hd"><span>PAPER BOOK</span><span id="win">no closes yet</span></div>
+    <div class="pos" id="book">no open paper positions</div>
+  </section>
+</main>
+<footer>DexScreener prices and flow, Rugcheck authorities and holders. Live buy quotes Jupiter and sends only after you sign. Memecoins can go to zero.</footer>
+<script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+<script>
+const AGENTS = [
+  { id: "ivy", name: "IVY", style: "cautious", floor: 0.92, color: "#d36cff" },
+  { id: "rex", name: "REX", style: "order flow", floor: 0.85, color: "#8eb6ff" },
+  { id: "nia", name: "NIA", style: "trend 24h", floor: 0.88, color: "#9be7b5" },
+  { id: "otto", name: "OTTO", style: "5m momentum", floor: 0.80, color: "#f0c56e" },
+  { id: "vex", name: "VEX", style: "fade spike", floor: 0.86, color: "#ff8f6d" },
+  { id: "juno", name: "JUNO", style: "volume", floor: 0.83, color: "#7ee0d6" },
+  { id: "cal", name: "CAL", style: "liq snob", floor: 0.90, color: "#e2f08a" },
+  { id: "moe", name: "MOE", style: "loose", floor: 0.78, color: "#ff6d9a" }
+];
+const SEED = [{"symbol":"CLICKING","name":"Just Keep Clicking","mint":"4DYpQAiKQA872y9xuSGFLSguho8XZn9mQBmVcRQZpump","url":"https://dexscreener.com/solana/exfi7u4lusqzahx71foyqiqw4dtmhzf9jj7ng7gshrxg","price":0.0000453,"liq":20126.65,"vol1":39243.33,"vol24":131265.88,"m5":-20.04,"h1":-61.43,"h24":374,"buys":449,"sells":350,"created":1776888322000},{"symbol":"BEAT","name":"HEARTBEAT","mint":"FA3YtURjye6H3EGCXGgXjCVjeggkRE4bURdvCK9Kpump","url":"https://dexscreener.com/solana/75vzrivki68fhjrktefy3jsg3ltgarmj2ouezq2dzzt","price":0.00006779,"liq":21921.34,"vol1":4384.57,"vol24":4384.57,"m5":-0.45,"h1":36.43,"h24":36.43,"buys":91,"sells":74,"created":1791144656000},{"symbol":"MBUM","name":"Milton Bumford","mint":"8jpcHKbGtcwyYvo2FrkjStGpwXXpEJtrB91aWaRBpump","url":"https://dexscreener.com/solana/5nqt4hytm9u6mg5uqbegddhgvyat8blfb9typtcr6mdm","price":0.00004689,"liq":18431.7,"vol1":7327.15,"vol24":26261.21,"m5":-0.94,"h1":8.85,"h24":315,"buys":57,"sells":41,"created":1790211863000},{"symbol":"KRYVEX","name":"KRYVEX","mint":"PrkyDdnE9A99ghintXqgoynRahwz4oevixigZg3pump","url":"https://dexscreener.com/solana/3rtntmzhwcrvmxkajwhkbpmdxflk8zgxbwv6m2eqpyly","price":0.0001613,"liq":37414.65,"vol1":5717.99,"vol24":104900.59,"m5":-7,"h1":12.43,"h24":59.47,"buys":56,"sells":27,"created":1786529011000},{"symbol":"4CATS","name":"4 CATS","mint":"6HD1iyTY4ChvoFEKgQ2tV4rHavrpR1yJw9Kwyqtm7hmC","url":"https://dexscreener.com/solana/crzyhbwassyhfpwhhz9h7tbvagpnhpmkkenwitsjbkvz","price":0.00002691,"liq":0,"vol1":53667.67,"vol24":53667.67,"m5":1.52,"h1":649,"h24":649,"buys":607,"sells":303,"created":1791143977000},{"symbol":"EGO","name":"EGO","mint":"BbJJUTuGV2B7tJ99YeryiCBFLG39Hoc4RTzEwchtpump","url":"https://dexscreener.com/solana/azbssg82zpspef97t1g7phwjaikntxmatwc3tgdqpkxk","price":0.0005829,"liq":81001.79,"vol1":377785.66,"vol24":6558946.17,"m5":-17.01,"h1":12,"h24":40,"buys":800,"sells":700,"created":1780000000000}];
+
+const state = {
+  bank0: 10000,
+  cash: 10000,
+  paused: false,
+  filter: "all",
+  universe: SEED.slice(),
+  stale: true,
+  log: [],
+  positions: {},
+  closed: [],
+  decisions: 0,
+  lastByAgent: {},
+  cursor: 0,
+  focus: null,
+  pin: false,
+  reports: {},
+  fresh: [],
+  scanMode: "new",
+  q: "",
+  seen: {},
+  sniper: false,
+  sniped: {},
+  snipeLog: [],
+  curve: [],
+  paperSize: 150,
+  liveSize: 0.05
+};
+
+const $ = (id) => document.getElementById(id);
+const money = (n) => (n < 0 ? "−$" : "$") + Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const num = (n, d=2) => Number(n || 0).toFixed(d);
+
+function ageMin(c) { return c.created ? (Date.now() - c.created) / 60000 : 9999; }
+function buyPct(c) { return c.buys / Math.max(1, c.buys + c.sells); }
+function rugScore(c) {
+  let r = 0.06;
+  const age = ageMin(c);
+  if (age < 30) r += 0.36;
+  else if (age < 120) r += 0.08;
+  if (c.liq < 15000) r += 0.34;
+  if (c.liq < 4000) r += 0.16;
+  if (buyPct(c) < 0.42) r += 0.14;
+  if (c.m5 < -12) r += 0.1;
+  if (c.vol1 > Math.max(c.liq, 1) * 6 && c.liq < 40000) r += 0.08;
+  return Math.min(0.97, r);
+}
+function confidence(c, agent) {
+  const buy = buyPct(c);
+  const volx = c.vol1 / Math.max(c.liq, 1);
+  let conf = 0.42;
+  if (agent.id === "ivy") conf += (c.liq > 40000 ? 0.22 : 0) + (buy > 0.6 ? 0.16 : 0) + (c.h1 > 0 && c.h1 < 25 ? 0.14 : 0) - (c.m5 < 0 ? 0.12 : 0);
+  if (agent.id === "rex") conf += Math.min(0.28, (buy - 0.5) * 0.9) + (c.buys > 80 ? 0.16 : 0.04);
+  if (agent.id === "nia") conf += Math.max(-0.2, Math.min(0.3, c.h24 / 200)) + (c.h1 > 0 ? 0.1 : -0.08);
+  if (agent.id === "otto") conf += Math.max(-0.15, Math.min(0.34, c.m5 / 40)) + (c.h1 > 5 ? 0.12 : 0);
+  if (agent.id === "vex") conf += (c.m5 < -8 && c.liq > 20000 ? 0.28 : -0.05) + (c.h1 < -10 ? 0.12 : 0);
+  if (agent.id === "juno") conf += Math.min(0.34, volx * 0.25) + (c.vol1 > 20000 ? 0.12 : 0);
+  if (agent.id === "cal") conf += (c.liq > 50000 ? 0.3 : c.liq > 25000 ? 0.16 : -0.08);
+  if (agent.id === "moe") conf += 0.18 + (buy > 0.55 ? 0.12 : 0) + (c.h1 > 0 ? 0.08 : 0);
+  conf -= rugScore(c) * 0.25;
+  return Math.max(0.05, Math.min(0.99, conf));
+}
+function sideFor(c, agent, conf) {
+  const held = state.positions[c.mint];
+  if (held && (c.h1 < -8 || buyPct(c) < 0.4 || c.m5 < -10)) return "SELL";
+  if (held) return "HOLD";
+  if (agent.id === "vex") return c.m5 < -6 && conf >= agent.floor ? "BUY" : "HOLD";
+  if (c.h1 > 80 && agent.id !== "moe") return "HOLD";
+  return conf >= 0.7 && c.h1 > -5 ? "BUY" : "HOLD";
+}
+function decide(agent, c) {
+  const rug = rugScore(c);
+  const conf = confidence(c, agent);
+  const side = sideFor(c, agent, conf);
+  const age = ageMin(c);
+  if (side === "SELL" && !state.positions[c.mint]) return { status: "SKIP", side, conf, rug, why: "no position" };
+  if (side === "HOLD") return { status: "SKIP", side, conf, rug, why: conf < 0.55 ? "no edge" : "hold" };
+  if (c.liq < 15000) return { status: "REJECTED", side, conf, rug, why: `liquidity $${Math.round(c.liq).toLocaleString()} < $15K` };
+  if (age < 30) return { status: "REJECTED", side, conf, rug, why: `age ${Math.round(age)}m < 30m` };
+  if (rug > 0.55) return { status: "REJECTED", side, conf, rug, why: `rug ${num(rug)} > .55` };
+  if (conf < agent.floor) return { status: "REVIEW", side, conf, rug, why: `conf < floor ${agent.floor.toFixed(2)}` };
+  const dayLoss = equity() - state.bank0;
+  if (dayLoss < -state.bank0 * 0.10) return { status: "REJECTED", side, conf, rug, why: "daily stop -10%" };
+  return { status: "FILLED", side, conf, rug, why: side === "BUY" ? "paper entry" : "paper exit" };
+}
+function equity() {
+  let mtm = state.cash;
+  for (const p of Object.values(state.positions)) mtm += p.qty * p.last;
+  return mtm;
+}
+function applyFill(c, ans) {
+  const size = Math.min(ans.size || 500, state.cash);
+  if (ans.side === "BUY") {
+    if (size < 20 || state.cash < size) return "size blocked";
+    const qty = size / Math.max(c.price, 1e-12);
+    state.cash -= size;
+    state.positions[c.mint] = { symbol: c.symbol, mint: c.mint, url: c.url, qty, entry: c.price, last: c.price, cost: size, agent: ans.agent };
+    return "entry";
+  }
+  const pos = state.positions[c.mint];
+  if (!pos) return "no position";
+  const proceeds = pos.qty * c.price;
+  const pnl = proceeds - pos.cost;
+  state.cash += proceeds;
+  state.closed.push({ symbol: pos.symbol, pnl });
+  delete state.positions[c.mint];
+  return "exit";
+}
+function mark() {
+  const byMint = Object.fromEntries([...state.universe, ...state.fresh].map(c => [c.mint, c]));
+  for (const p of Object.values(state.positions)) {
+    if (byMint[p.mint] && byMint[p.mint].price) p.last = byMint[p.mint].price;
+  }
+}
+function tick() {
+  if (state.paused || !state.universe.length) return;
+  const agent = AGENTS[state.cursor % AGENTS.length];
+  state.cursor++;
+  const pool = state.universe.filter(c => c.symbol && c.price > 0);
+  const c = pool[Math.floor(Math.random() * pool.length)];
+  if (!c) return;
+  const ans = decide(agent, c);
+  ans.agent = agent.name;
+  if (ans.status === "FILLED") ans.why = applyFill(c, { ...ans, agent: agent.name });
+  state.decisions++;
+  state.lastByAgent[agent.id] = ans.status + " " + ans.side + " $" + c.symbol;
+  if (!state.pin && (ans.status === "FILLED" || ans.status === "REVIEW" || !state.focus)) {
+    const changed = state.focus !== c.mint;
+    state.focus = c.mint;
+    if (changed) analyzeFocus();
+  }
+  const row = {
+    ts: new Date().toLocaleTimeString(),
+    agent: agent.name,
+    status: ans.status,
+    side: ans.side,
+    symbol: c.symbol,
+    mint: c.mint,
+    conf: ans.conf,
+    why: ans.why,
+    url: c.url
+  };
+  state.log.unshift(row);
+  state.log = state.log.slice(0, 80);
+  render();
+}
+function render() {
+  mark();
+  const eq = equity();
+  const pnl = eq - state.bank0;
+  $("bank").textContent = money(eq);
+  $("open").textContent = Object.keys(state.positions).length;
+  $("decisions").textContent = state.decisions.toLocaleString();
+  $("pnl").textContent = (pnl >= 0 ? "+" : "") + money(pnl);
+  $("pnl").className = pnl >= 0 ? "up" : "down";
+  $("clock").textContent = state.paused ? "PAUSED" : (state.stale ? "STALE FEED" : "LIVE") + " · " + state.universe.length + " pairs";
+  const wins = state.closed.filter(x => x.pnl > 0).length;
+  $("win").textContent = state.closed.length ? `${Math.round(100 * wins / state.closed.length)}% closes` : "no closes yet";
+  const rows = state.log.filter(r => state.filter === "all" || r.agent === state.filter);
+  $("tape").innerHTML = rows.map(r => {
+    const cls = r.status === "FILLED" ? (r.side === "SELL" ? "sell" : "buy") : r.status === "REJECTED" ? "rej" : r.status === "REVIEW" ? "rev" : "skip";
+    return `<div class="ev" data-mint="${r.mint}"><div class="t">${r.ts}</div><div><span class="who">${r.agent}</span> <span class="${cls}">${r.status} ${r.side} $${r.symbol}</span> <span class="t">${num(r.conf)} ${r.why}</span> <a href="${r.url}" target="_blank" rel="noopener">chart</a></div></div>`;
+  }).join("") || `<div class="rules">no decisions yet</div>`;
+  $("ops").innerHTML = AGENTS.map(a => {
+    const on = state.filter === a.name ? "on" : "";
+    return `<button class="op ${on}" data-agent="${a.name}"><span class="dot" style="background:${a.color}"></span>${a.name}<small>${a.style} · floor ${a.floor.toFixed(2)}</small><small>${state.lastByAgent[a.id] || "idle"}</small></button>`;
+  }).join("");
+  const book = Object.values(state.positions);
+  $("book").innerHTML = book.length ? book.map(p => {
+    const pnl = p.qty * p.last - p.cost;
+    return `<div><button data-mint="${p.mint}">$${p.symbol}</button><span class="${pnl>=0?"up":"down"}">${pnl>=0?"+":""}${money(pnl)} · ${p.agent}</span></div>`;
+  }).join("") : "no open paper positions";
+  $("feedmeta").textContent = state.stale ? "seed / last pull" : "dexscreener";
+  renderAnalysis();
+  if ($("snipeBook")) renderSniper();
+  drawPnl();
+}
+async function refresh() {
+  const mints = state.universe.map(c => c.mint).filter(Boolean).slice(0, 30);
+  if (!mints.length) return;
+  try {
+    const pairs = await fetch("https://api.dexscreener.com/tokens/v1/solana/" + mints.join(",")).then(r => r.json());
+    const byMint = {};
+    for (const p of pairs || []) byMint[p.baseToken?.address] = p;
+    for (const c of state.universe) {
+      const p = byMint[c.mint];
+      if (!p) continue;
+      c.price = Number(p.priceUsd || c.price || 0);
+      c.liq = p.liquidity?.usd || c.liq || 0;
+      c.m5 = p.priceChange?.m5 || 0;
+      c.h1 = p.priceChange?.h1 || 0;
+      c.buys = p.txns?.h1?.buys || c.buys || 0;
+      c.sells = p.txns?.h1?.sells || c.sells || 0;
+    }
+    state.stale = false;
+    $("feedmeta").textContent = "pump.fun";
+    render();
+  } catch (err) {
+    state.stale = true;
+    $("feedmeta").textContent = "pump feed stale";
+  }
+}
+function provider() {
+  return window.phantom?.solana || window.solflare || window.solana || null;
+}
+function short(addr) {
+  return addr.slice(0, 4) + "…" + addr.slice(-4);
+}
+async function readBalance(addr) {
+  const res = await fetch("https://api.mainnet-beta.solana.com", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [addr] })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || "rpc");
+  return (data.result?.value || 0) / 1e9;
+}
+async function connectWallet() {
+  const p = provider();
+  if (!p) {
+    const here = location.href.startsWith("http") ? location.href : "";
+    $("walletLine").textContent = here
+      ? "No wallet in this browser. Open this page inside Phantom."
+      : "No wallet injected. Host this file, then open it in the Phantom browser.";
+    if (here) location.href = "https://phantom.app/ul/browse/" + encodeURIComponent(here) + "?ref=" + encodeURIComponent(here);
+    return;
+  }
+  const resp = await p.connect();
+  const addr = (resp.publicKey || p.publicKey).toString();
+  state.wallet = addr;
+  $("wallet").textContent = short(addr);
+  $("wallet").classList.add("on");
+  $("walletLine").textContent = addr + " · reading balance…";
+  try {
+    const sol = await readBalance(addr);
+    $("walletLine").textContent = addr + " · " + sol.toFixed(3) + " SOL · live buy signs in Phantom, sniper stays paper";
+  } catch (err) {
+    $("walletLine").textContent = addr + " · connected, balance read failed";
+  }
+}
+$("wallet").onclick = () => connectWallet().catch(err => { $("walletLine").textContent = "connect failed: " + err.message; });
+$("kill").onclick = () => {
+  state.paused = !state.paused;
+  $("kill").textContent = state.paused ? "KILL SWITCH ARMED" : "KILL SWITCH OFF";
+  $("kill").classList.toggle("on", state.paused);
+  render();
+};
+$("flat").onclick = () => {
+  for (const p of Object.values(state.positions)) {
+    state.cash += p.qty * p.last;
+    state.closed.push({ symbol: p.symbol, pnl: p.qty * p.last - p.cost });
+  }
+  state.positions = {};
+  render();
+};
+$("all").onclick = () => { state.filter = "all"; $("all").classList.add("on"); render(); };
+$("ops").onclick = (e) => {
+  const btn = e.target.closest("[data-agent]");
+  if (!btn) return;
+  state.filter = btn.dataset.agent;
+  $("all").classList.remove("on");
+  render();
+};
+function verdictFor(c, rep) {
+  const rug = rugScore(c);
+  const buy = buyPct(c);
+  const age = ageMin(c);
+  const flags = [];
+  if (c.liq < 15000) flags.push("thin liquidity");
+  if (age < 30) flags.push("under 30m old");
+  if (buy < 0.45) flags.push("sell pressure");
+  if (c.m5 < -12) flags.push("5m dump");
+  if (c.vol1 > Math.max(c.liq, 1) * 4) flags.push("volume dwarfs liquidity");
+  if (rep) {
+    if (rep.rugged) flags.push("rugcheck rugged");
+    if (rep.mintAuthority) flags.push("mint authority live");
+    if (rep.freezeAuthority) flags.push("freeze authority live");
+    if ((rep.topPct || 0) > 40) flags.push("top holder " + Math.round(rep.topPct) + "%");
+    (rep.risks || []).slice(0, 3).forEach(r => flags.push(r.name || r.description || "rugcheck risk"));
+  }
+  let label = "WATCH";
+  let cls = "rev";
+  if (flags.length >= 3 || rug > 0.55) { label = "AVOID"; cls = "rej"; }
+  else if (!flags.length && c.liq >= 25000 && buy >= 0.55 && age >= 30) { label = "CLEAN ENOUGH"; cls = "buy"; }
+  return { label, cls, flags, rug, buy, age };
+}
+function renderAnalysis() {
+  const c = state.universe.find(x => x.mint === state.focus) || state.universe[0];
+  if (!c) { $("analysis").textContent = "no pair in the universe"; return; }
+  const rep = state.reports[c.mint];
+  const v = verdictFor(c, rep);
+  const volx = c.vol1 / Math.max(c.liq, 1);
+  $("anmeta").textContent = (state.pin ? "PINNED · " : "FOLLOWING · ") + (rep ? "rugcheck " + (rep.at || "") : "pulling rugcheck");
+  $("analysis").innerHTML = `
+    <div class="an-top"><strong>$${c.symbol}</strong><span class="verdict ${v.cls}">${v.label}</span></div>
+    <div class="mint">${c.name || ""} · ${c.mint}</div>
+    <div class="grid">
+      <div class="cell"><b>PRICE</b>${c.price < 0.01 ? c.price.toExponential(3) : num(c.price, 6)}</div>
+      <div class="cell"><b>LIQUIDITY</b>${money(c.liq)}</div>
+      <div class="cell"><b>5M / 1H / 24H</b><span class="${c.m5>=0?"up":"down"}">${num(c.m5,1)}%</span> · <span class="${c.h1>=0?"up":"down"}">${num(c.h1,1)}%</span> · <span class="${c.h24>=0?"up":"down"}">${num(c.h24,1)}%</span></div>
+      <div class="cell"><b>BUY % 1H</b>${Math.round(v.buy*100)}% · ${c.buys}/${c.sells}</div>
+      <div class="cell"><b>VOL 1H / LIQ</b>${num(volx)}x · ${money(c.vol1)}</div>
+      <div class="cell"><b>AGE</b>${v.age > 9999 ? "unknown" : Math.round(v.age) + "m"}</div>
+      <div class="cell"><b>DESK RUG</b>${num(v.rug)} / .55 cap</div>
+      <div class="cell"><b>RUGCHECK</b>${rep ? (rep.scoreNorm ?? "—") + " norm · holders " + (rep.holders ?? "—") : "…"}</div>
+      <div class="cell"><b>MINT AUTH</b>${rep ? (rep.mintAuthority ? "LIVE" : "none") : "…"}</div>
+      <div class="cell"><b>FREEZE AUTH</b>${rep ? (rep.freezeAuthority ? "LIVE" : "none") : "…"}</div>
+      <div class="cell"><b>TOP HOLDER</b>${rep && rep.topPct != null ? num(rep.topPct,1) + "%" : "…"}</div>
+      <div class="cell"><b>X</b>${c.x ? ((c.likes || 0) + " likes · " + (c.views || 0) + " views") : "no tweet linked"}</div>
+    </div>
+    ${v.flags.length ? `<ul class="risks">${v.flags.map(f => `<li>${f}</li>`).join("")}</ul>` : `<div class="rules">no hard flags on the last pull</div>`}
+    <div class="row"><a href="${c.url}" target="_blank" rel="noopener">DexScreener</a><button id="pin">${state.pin ? "UNPIN" : "PIN THIS"}</button><button id="live">LIVE BUY</button></div>
+    <div class="row"><input id="solSize" value="0.05" style="width:80px;background:#10130c;color:inherit;border:1px solid var(--line);padding:6px"> <span class="t">SOL live buy · change it here or in the sniper panel</span></div>
+    <div class="rules" id="liveLine">${state.liveLine || "live buy uses the pinned coin"}</div>`;
+  const pin = $("pin");
+  if (pin) pin.onclick = () => { state.pin = !state.pin; if (state.pin) state.focus = c.mint; renderAnalysis(); };
+  const live = $("live");
+  if (live) live.onclick = () => liveBuy(c).catch(err => { state.liveLine = "live buy failed: " + err.message; renderAnalysis(); });
+}
+async function analyzeFocus() {
+  const mint = state.focus || (state.universe[0] && state.universe[0].mint);
+  if (!mint) return;
+  state.focus = mint;
+  const stamp = Date.now();
+  state.analyzing = stamp;
+  try {
+    const pairs = await fetch("https://api.dexscreener.com/tokens/v1/solana/" + mint).then(r => r.json());
+    const p = (pairs || [])[0];
+    if (p) {
+      const mapped = {
+        symbol: p.baseToken?.symbol || "?",
+        name: p.baseToken?.name || "",
+        mint,
+        url: p.url,
+        price: Number(p.priceUsd || 0),
+        liq: p.liquidity?.usd || 0,
+        vol1: p.volume?.h1 || 0,
+        vol24: p.volume?.h24 || 0,
+        m5: p.priceChange?.m5 || 0,
+        h1: p.priceChange?.h1 || 0,
+        h24: p.priceChange?.h24 || 0,
+        buys: p.txns?.h1?.buys || 0,
+        sells: p.txns?.h1?.sells || 0,
+        created: p.pairCreatedAt || (state.universe.find(x => x.mint === mint) || {}).created || 0
+      };
+      const i = state.universe.findIndex(x => x.mint === mint);
+      if (i >= 0) state.universe[i] = { ...state.universe[i], ...mapped };
+      else state.universe.unshift(mapped);
+    }
+    const summary = await fetch("https://api.rugcheck.xyz/v1/tokens/" + mint + "/report/summary").then(r => r.ok ? r.json() : null).catch(() => null);
+    if (summary) {
+      state.reports[mint] = {
+        ...(state.reports[mint] || {}),
+        at: new Date().toLocaleTimeString(),
+        scoreNorm: summary.score_normalised,
+        lpLockedPct: summary.lpLockedPct,
+        risks: summary.risks || []
+      };
+      renderAnalysis();
+    }
+    const report = await fetch("https://api.rugcheck.xyz/v1/tokens/" + mint + "/report").then(r => r.ok ? r.json() : null).catch(() => null);
+    if (report && state.focus === mint) {
+      const holders = report.topHolders || [];
+      state.reports[mint] = {
+        ...(state.reports[mint] || {}),
+        at: new Date().toLocaleTimeString(),
+        scoreNorm: report.score_normalised ?? state.reports[mint]?.scoreNorm,
+        risks: (report.risks && report.risks.length ? report.risks : state.reports[mint]?.risks) || [],
+        mintAuthority: report.mintAuthority,
+        freezeAuthority: report.freezeAuthority,
+        rugged: report.rugged,
+        holders: report.totalHolders,
+        topPct: holders[0]?.pct,
+        launchpad: report.launchpad?.name || report.deployPlatform || ""
+      };
+    }
+  } catch (err) {
+    $("anmeta").textContent = "analysis pull failed";
+  }
+  if (state.analyzing === stamp) renderAnalysis();
+}
+$("tape").onclick = (e) => {
+  if (e.target.closest("a")) return;
+  const row = e.target.closest("[data-mint]");
+  if (!row) return;
+  state.focus = row.dataset.mint;
+  state.pin = true;
+  analyzeFocus();
+};
+$("book").onclick = (e) => {
+  const row = e.target.closest("[data-mint]");
+  if (!row) return;
+  state.focus = row.dataset.mint;
+  state.pin = true;
+  analyzeFocus();
+};
+function ageLabel(ms) {
+  const m = Math.max(0, (Date.now() - ms) / 60000);
+  if (m < 1) return Math.round(m * 60) + "s";
+  if (m < 90) return Math.round(m) + "m";
+  return num(m / 60, 1) + "h";
+}
+function heat(c) {
+  const buy = buyPct(c);
+  const rug = rugScore(c);
+  let h = 40;
+  h += Math.max(-20, Math.min(25, c.m5));
+  h += (buy - 0.5) * 40;
+  h += Math.min(20, Math.log10(Math.max(c.liq, 1)) * 4);
+  h -= rug * 30;
+  if (c.liq < 8000) h -= 15;
+  const eng = (c.likes || 0) + (c.retweets || 0) * 2 + (c.replies || 0);
+  if (c.x) h += 4;
+  if (eng > 10) h += 6;
+  if (eng > 50) h += 8;
+  if ((c.views || 0) > 1000) h += 4;
+  if (c.kols && c.kols.length) h += 12;
+  return Math.max(1, Math.min(99, Math.round(h)));
+}
+function tweetId(url) {
+  const m = String(url || "").match(/status\/(\d+)/);
+  return m ? m[1] : "";
+}
+async function enrichTwitter(coins) {
+  const targets = coins.filter(c => c.x && !c.xAt).slice(0, 6);
+  await Promise.all(targets.map(async c => {
+    const id = tweetId(c.x);
+    if (!id) { c.xAt = Date.now(); return; }
+    try {
+      const data = await fetch("https://api.fxtwitter.com/status/" + id).then(r => r.json());
+      const t = data.tweet || {};
+      c.likes = t.likes || 0;
+      c.retweets = t.retweets || 0;
+      c.replies = t.replies || 0;
+      c.views = t.views || 0;
+      c.xText = t.text || "";
+    } catch (err) {
+      c.xErr = true;
+    }
+    c.xAt = Date.now();
+  }));
+}
+function renderScanner() {
+  const q = state.q.trim().toLowerCase();
+  let rows = state.fresh.filter(c => !q || (c.symbol || "").toLowerCase().includes(q) || (c.mint || "").toLowerCase().includes(q) || (c.name || "").toLowerCase().includes(q));
+  if (state.scanMode === "run") rows = rows.filter(c => c.m5 > 0 && c.liq >= 8000 && buyPct(c) >= 0.5);
+  if (state.scanMode === "danger") rows = rows.filter(c => c.liq < 8000 || rugScore(c) > 0.45 || c.m5 < -12);
+  if (state.scanMode === "new") rows = rows.slice().sort((a, b) => b.created - a.created);
+  if (state.scanMode === "run") rows = rows.slice().sort((a, b) => heat(b) - heat(a));
+  if (state.scanMode === "danger") rows = rows.slice().sort((a, b) => rugScore(b) - rugScore(a));
+  $("scanmeta").textContent = state.scanNote || "ranking";
+  $("scanner").innerHTML = rows.length ? rows.slice(0, 18).map(c => {
+    const age = ageMin(c);
+    const arrived = Date.now() - (state.seen[c.mint] || 0) < 45000;
+    const tag = age < 15 ? "NEW" : age < 60 ? "FRESH" : "OLDER";
+    const flag = c.liq < 8000 || rugScore(c) > 0.5 ? "rej" : c.m5 > 8 ? "buy" : "rev";
+    return `<div class="ev ${arrived ? "arrived" : ""}" data-mint="${c.mint}"><div class="t ${flag}">${tag}<br>${c.created ? ageLabel(c.created) : "?"}<br>${heat(c)}</div><div><strong>$${c.symbol}</strong> ${c.name || ""} <span class="${c.m5>=0?"up":"down"}">${num(c.m5,1)}% 5m</span> <span class="t">${c.source === "pump" ? "pump.fun · " : ""}${c.complete ? "migrated · " : ""}liq ${money(c.liq)} · buy ${Math.round(buyPct(c)*100)}% · rug ${num(rugScore(c))} · x ${c.likes || 0}❤ ${c.views || 0} views</span><div class="t">${c.dex || ""} · ${c.x ? "tweet linked" : "no tweet"} · ${c.mint}</div></div></div>`;
+  }).join("") : `<div class="rules">nothing in this filter</div>`;
+}
+function mapPair(p) {
+  return {
+    symbol: p.baseToken?.symbol || "?",
+    name: p.baseToken?.name || "",
+    mint: p.baseToken?.address,
+    url: p.url,
+    dex: p.dexId || "",
+    price: Number(p.priceUsd || 0),
+    liq: p.liquidity?.usd || 0,
+    created: p.pairCreatedAt || 0,
+    mcap: p.marketCap || p.fdv || 0,
+    vol1: p.volume?.h1 || 0,
+    vol24: p.volume?.h24 || 0,
+    buys: p.txns?.m5?.buys || p.txns?.h1?.buys || 0,
+    sells: p.txns?.m5?.sells || p.txns?.h1?.sells || 0,
+    m5: p.priceChange?.m5 || 0,
+    h1: p.priceChange?.h1 || 0,
+    h24: p.priceChange?.h24 || 0
+  };
+}
+async function scanNew() {
+  try {
+    const pumps = await fetch("/api/pump").then(r => r.ok ? r.json() : []);
+    if (!Array.isArray(pumps) || !pumps.length) throw new Error("pump blocked");
+    const pumpMints = pumps.map(c => c.mint).filter(Boolean).slice(0, 150);
+    const pumpPairs = [];
+    for (let i = 0; i < pumpMints.length; i += 30) {
+      const chunk = await fetch("https://api.dexscreener.com/tokens/v1/solana/" + pumpMints.slice(i, i + 30).join(",")).then(r => r.ok ? r.json() : []).catch(() => []);
+      pumpPairs.push(...(chunk || []));
+    }
+    const pairByMint = {};
+    for (const raw of pumpPairs) {
+      const mappedPair = mapPair(raw);
+      if (mappedPair.mint) pairByMint[mappedPair.mint] = mappedPair;
+    }
+    const mapped = pumps.filter(c => c.mint).map(coin => {
+      const dex = pairByMint[coin.mint];
+      const row = dex ? { ...dex, source: "pump" } : {
+        symbol: coin.symbol || "?",
+        name: coin.name || "",
+        mint: coin.mint,
+        url: "https://pump.fun/coin/" + coin.mint,
+        dex: "pump",
+        price: 0,
+        liq: 0,
+        created: coin.created_timestamp || Date.now(),
+        mcap: coin.usd_market_cap || 0,
+        vol1: 0,
+        buys: 0,
+        sells: 0,
+        m5: 0,
+        h1: 0,
+        h24: 0,
+        source: "pump"
+      };
+      row.x = coin.twitter || row.x || "";
+      row.replies = coin.reply_count || 0;
+      row.complete = !!coin.complete;
+      row.created = coin.created_timestamp || row.created;
+      row.mcap = coin.usd_market_cap || row.mcap || 0;
+      return row;
+    }).sort((a, b) => b.created - a.created);
+    await enrichTwitter(mapped.slice(0, 8));
+    let arrived = 0;
+    for (const c of mapped) if (!state.seen[c.mint]) { state.seen[c.mint] = Date.now(); arrived++; }
+    state.fresh = mapped;
+    state.universe = mapped;
+    state.stale = false;
+    const under = mapped.filter(c => ageMin(c) < 15).length;
+    state.scanNote = `pump.fun · ${mapped.length} coins · ${under} under 15m` + (arrived ? ` · +${arrived} arrived` : "") + (state.sniper ? " · sniper live" : " · sniper safe");
+    $("feedmeta").textContent = "pump.fun";
+    snipePass(mapped);
+  } catch (err) {
+    state.scanNote = "pump.fun blocked — open the server link";
+  }
+  renderScanner();
+}
+const SOL = "So11111111111111111111111111111111111111112";
+async function liveBuy(c) {
+  if (!state.wallet) await connectWallet();
+  if (!state.wallet) throw new Error("connect a wallet first");
+  const size = Number(($("solSize") || {}).value || state.liveSize || 0.05);
+  state.liveSize = size;
+  if (!(size > 0) || size > 2) throw new Error("size must be 0.001 to 2 SOL");
+  const v = verdictFor(c, state.reports[c.mint]);
+  if (v.label === "AVOID" && !confirm("This coin is flagged AVOID. Sign a live buy anyway?")) return;
+  state.liveLine = "quoting Jupiter…";
+  renderAnalysis();
+  const amount = Math.round(size * 1e9);
+  const quote = await fetch(`https://lite-api.jup.ag/swap/v1/quote?inputMint=${SOL}&outputMint=${c.mint}&amount=${amount}&slippageBps=150`).then(r => r.json());
+  if (!quote.outAmount) throw new Error(quote.error || "no route");
+  const impact = Number(quote.priceImpactPct || 0);
+  if (impact > 5 && !confirm(`Price impact ${impact}%. Sign anyway?`)) return;
+  if (!confirm(`Buy $${c.symbol} with ${size} SOL? You will sign in the wallet.`)) return;
+  state.liveLine = "building swap…";
+  renderAnalysis();
+  const swap = await fetch("https://lite-api.jup.ag/swap/v1/swap", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ quoteResponse: quote, userPublicKey: state.wallet, wrapAndUnwrapSol: true, dynamicComputeUnitLimit: true })
+  }).then(r => r.json());
+  if (!swap.swapTransaction) throw new Error(swap.error || "swap build failed");
+  const raw = Uint8Array.from(atob(swap.swapTransaction), ch => ch.charCodeAt(0));
+  const tx = solanaWeb3.VersionedTransaction.deserialize(raw);
+  const p = provider();
+  const signed = await p.signTransaction(tx);
+  const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+  const sig = await connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
+  state.liveLine = "sent " + sig;
+  state.log.unshift({ ts: new Date().toLocaleTimeString(), agent: "LIVE", status: "FILLED", side: "BUY", symbol: c.symbol, mint: c.mint, conf: 1, why: sig.slice(0, 8), url: "https://solscan.io/tx/" + sig });
+  render();
+}
+function snipePass(coins) {
+  const openSnipes = Object.values(state.positions).filter(p => p.agent === "SNIPER").length;
+  for (const c of coins) {
+    const held = state.positions[c.mint];
+    if (held && held.agent === "SNIPER" && c.price > 0) {
+      const pnl = (c.price - held.entry) / held.entry;
+      if (pnl >= 0.4 || pnl <= -0.18 || c.m5 < -12) {
+        applyFill(c, { side: "SELL", agent: "SNIPER" });
+        state.snipeLog.unshift(`${new Date().toLocaleTimeString()} EXIT $${c.symbol} ${pnl >= 0 ? "+" : ""}${Math.round(pnl * 100)}%`);
+      }
+    }
+  }
+  if (!state.sniper || state.paused) return renderSniper();
+  for (const c of coins.slice().sort((a, b) => heat(b) - heat(a))) {
+    if (state.sniped[c.mint] || state.positions[c.mint]) continue;
+    if (Object.values(state.positions).filter(p => p.agent === "SNIPER").length >= 4) break;
+    const age = ageMin(c);
+    const ok = c.price > 0 && age >= 2 && age <= 25 && c.liq >= 12000 && c.m5 >= 4 && c.m5 <= 80 && buyPct(c) >= 0.55 && heat(c) >= 62 && rugScore(c) <= 0.45 && (c.x ? (c.likes || 0) + (c.retweets || 0) >= 3 : true);
+    if (!ok) continue;
+    const paperSize = Math.max(20, Math.min(2000, Number(($("paperSize") || {}).value || state.paperSize || 150)));
+    state.paperSize = paperSize;
+    const why = applyFill(c, { side: "BUY", agent: "SNIPER", size: paperSize });
+    if (why !== "entry") continue;
+    state.sniped[c.mint] = Date.now();
+    state.decisions++;
+    state.log.unshift({ ts: new Date().toLocaleTimeString(), agent: "SNIPER", status: "FILLED", side: "BUY", symbol: c.symbol, mint: c.mint, conf: heat(c) / 100, why: c.kols && c.kols.length ? "kol " + c.kols.join(",") : "paper snipe", url: c.url });
+    state.snipeLog.unshift(`${new Date().toLocaleTimeString()} SNIPE $${c.symbol} heat ${heat(c)} liq ${money(c.liq)}`);
+  }
+  state.log = state.log.slice(0, 80);
+  state.snipeLog = state.snipeLog.slice(0, 8);
+  renderSniper();
+  render();
+}
+function renderSniper() {
+  const shots = Object.values(state.positions).filter(p => p.agent === "SNIPER");
+  $("snipeState").textContent = state.sniper ? `ARMED · $${state.paperSize} PAPER` : "SAFE · PAPER";
+  $("snipeState").className = state.sniper ? "buy" : "";
+  $("snipeCount").textContent = shots.length + "/4";
+  $("arm").textContent = state.sniper ? "SNIPER ARMED" : "ARM SNIPER";
+  $("arm").classList.toggle("on", state.sniper);
+  $("snipeBook").innerHTML = shots.length ? shots.map(p => {
+    const pnl = p.qty * p.last - p.cost;
+    const pct = p.entry ? ((p.last - p.entry) / p.entry) * 100 : 0;
+    return `<div><button data-mint="${p.mint}">$${p.symbol}</button><span class="${pnl>=0?"up":"down"}">${pnl>=0?"+":""}${money(pnl)} · ${pct>=0?"+":""}${num(pct,1)}%</span></div>`;
+  }).join("") : "no armed paper shots";
+  $("snipeLog").innerHTML = state.snipeLog.length ? state.snipeLog.map(line => `<div class="rules">${line}</div>`).join("") : `<div class="rules">waiting for a 2–25m runner</div>`;
+}
+$("paperSize").oninput = (e) => { state.paperSize = Number(e.target.value) || 150; };
+$("liveSize").oninput = (e) => { state.liveSize = Number(e.target.value) || 0.05; const box = $("solSize"); if (box) box.value = e.target.value; };
+$("arm").onclick = () => {
+  state.sniper = !state.sniper;
+  renderSniper();
+};
+$("flatSnipes").onclick = () => {
+  for (const c of state.fresh) {
+    const p = state.positions[c.mint];
+    if (p && p.agent === "SNIPER" && c.price) applyFill(c, { side: "SELL", agent: "SNIPER" });
+  }
+  state.snipeLog.unshift(`${new Date().toLocaleTimeString()} FLATTEN sniper book`);
+  render();
+};
+$("snipeBook").onclick = (e) => {
+  const row = e.target.closest("[data-mint]");
+  if (!row) return;
+  state.focus = row.dataset.mint;
+  state.pin = true;
+  analyzeFocus();
+};
+function setScan(mode, id) {
+  state.scanMode = mode;
+  ["snew", "srun", "sdanger"].forEach(x => $(x).classList.toggle("on", x === id));
+  renderScanner();
+}
+$("snew").onclick = () => setScan("new", "snew");
+$("srun").onclick = () => setScan("run", "srun");
+$("sdanger").onclick = () => setScan("danger", "sdanger");
+$("q").oninput = (e) => { state.q = e.target.value; renderScanner(); };
+$("scanner").onclick = (e) => {
+  const row = e.target.closest("[data-mint]");
+  if (!row) return;
+  const coin = state.fresh.find(c => c.mint === row.dataset.mint);
+  if (coin && !state.universe.some(u => u.mint === coin.mint)) state.universe.unshift(coin);
+  state.focus = row.dataset.mint;
+  state.pin = true;
+  analyzeFocus();
+};
+render();
+refresh();
+analyzeFocus();
+scanNew();
+function drawPnl() {
+  const svg = $("pnlChart");
+  if (!svg) return;
+  const pts = state.curve.slice(-80);
+  if (pts.length < 2) {
+    svg.innerHTML = `<text x="8" y="36" fill="#8d937c" font-size="11">pnl chart fills as marks land</text>`;
+    return;
+  }
+  const min = Math.min(...pts);
+  const max = Math.max(...pts);
+  const span = max - min || 1;
+  const d = pts.map((v, i) => {
+    const x = (i / (pts.length - 1)) * 320;
+    const y = 58 - ((v - min) / span) * 52;
+    return `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const up = pts[pts.length - 1] >= pts[0];
+  svg.innerHTML = `<path d="${d}" fill="none" stroke="${up ? "#9be7b5" : "#ff6d6d"}" stroke-width="2"/><text x="8" y="14" fill="#8d937c" font-size="10">${money(pts[pts.length - 1] - state.bank0)} · ${pts.length} marks</text>`;
+}
+async function markFast() {
+  const mints = Object.keys(state.positions);
+  if (!mints.length) {
+    state.curve.push(equity());
+    state.curve = state.curve.slice(-120);
+    drawPnl();
+    return;
+  }
+  try {
+    const pairs = await fetch("https://api.dexscreener.com/tokens/v1/solana/" + mints.join(",")).then(r => r.json());
+    const price = {};
+    for (const p of pairs || []) price[p.baseToken?.address] = Number(p.priceUsd || 0);
+    for (const pos of Object.values(state.positions)) {
+      if (price[pos.mint]) pos.last = price[pos.mint];
+    }
+  } catch (err) {}
+  state.curve.push(equity());
+  state.curve = state.curve.slice(-120);
+  render();
+}
+setInterval(tick, 1800);
+setInterval(refresh, 25000);
+setInterval(analyzeFocus, 8000);
+const KOLS = [
+  { name: "Gake", addr: "DNfuF1L62WWyW3pNakVkyGGFzVVhj4Yr52jSmdTyeBHm" },
+  { name: "Ansem", addr: "AVAZvHLR2PcWpDf8BXY4rVxNHYRBytycHkcB5z5QNXYm" },
+  { name: "Pow", addr: "8zFZHuSRuDpuAR7J6FzwyF3vKNx4CVW3DFHJerQhc7Zd" },
+  { name: "Brox", addr: "7VBTpiiEjkwRbRGHJFUz6o5fWuhPFtAmy8JGhNqwHNnn" },
+  { name: "Nach", addr: "ATKi3ZvMbo31pbgBgGSGQPDPKEbQ4oGzoDrwG2sms56k" },
+  { name: "OGAntD", addr: "215nhcAHjQQGgwpQSJQ7zR26etbjjtVdW74NLzwEgQjP" }
+];
+const seenSigs = {};
+async function rpc(method, params) {
+  const res = await fetch("https://api.mainnet-beta.solana.com", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || method);
+  return data.result;
+}
+async function watchKols() {
+  const mints = new Set((state.fresh || []).map(c => c.mint));
+  if (!mints.size) return;
+  const hits = [];
+  for (const kol of KOLS) {
+    try {
+      const sigs = await rpc("getSignaturesForAddress", [kol.addr, { limit: 3 }]);
+      for (const sig of sigs || []) {
+        if (seenSigs[sig.signature]) continue;
+        seenSigs[sig.signature] = 1;
+        const tx = await rpc("getTransaction", [sig.signature, { maxSupportedTransactionVersion: 0, encoding: "json" }]);
+        const keys = (tx?.transaction?.message?.accountKeys || []).map(k => k.pubkey || k);
+        const mint = keys.find(k => mints.has(k));
+        if (!mint) continue;
+        const coin = state.fresh.find(c => c.mint === mint);
+        coin.kols = [...new Set([...(coin.kols || []), kol.name])];
+        hits.push(`${kol.name} touched $${coin.symbol}`);
+      }
+    } catch (err) {}
+  }
+  $("kolmeta").textContent = hits.length ? hits[0] : "no overlap on this pass";
+  $("kols").innerHTML = KOLS.map(k => `<div class="rules">${k.name} · ${k.addr.slice(0, 4)}…${k.addr.slice(-4)}</div>`).join("") + (hits.length ? hits.map(h => `<div class="rules">${h}</div>`).join("") : "");
+}
+setInterval(scanNew, 12000);
+setInterval(markFast, 3000);
+setInterval(watchKols, 20000);
+watchKols();
+</script>
+</body>
+</html>
